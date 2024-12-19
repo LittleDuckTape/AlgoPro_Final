@@ -10,7 +10,7 @@ class Sky:
         self.full_surf = pygame.Surface((SCREEN_WIDTH,SCREEN_HEIGHT))
         self.start_color = list(WHITE)
         self.end_color = (38, 101, 189)
-        self.speed = 1
+        self.speed = 1.5
         self.reached_end_color = False
 
     def display(self, dt):
