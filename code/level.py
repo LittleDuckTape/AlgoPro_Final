@@ -185,39 +185,51 @@ class Level:
         self.display_surface.blit(text_surf, text_rect)
 
     def handle_interactions(self):
-        keys = pygame.key.get_pressed()
+        keys = pygame.key.get_pressed()  # Get the current state of all keys
         for sprite in self.interaction_sprites:
-            if self.player.rect.colliderect(sprite.hitbox):
-                # print(f"Colliding with {sprite.name} - Package Assigned: {sprite.package_assigned} - Delivered: {sprite.delivered}")  # DEBUG
-
+            if self.player.rect.colliderect(sprite.hitbox):  # Check if player is within the door hitbox
                 # Check door states (whether package is assigned or delivered)
                 door_state = self.door_states.get(sprite.name)
-                # print(f"Checking door: {sprite.name}, door state: {door_state}")  # DEBUG
 
-                if keys[pygame.K_f]:
-                    # print(f"Interacting with {sprite.name}")  # DEBUG
+                if keys[pygame.K_f] and not getattr(self, 'interaction_occurred', False):
+                    # Only interact if the key is pressed and the interaction hasn't already occurred
+                    if door_state is None:
+                        print(f"Error: Door {sprite.name} not found in door_states!") 
+                        continue  # Exit this interaction if door doesn't exist
 
-                    if isinstance(sprite, Interaction) and sprite.name.lower().startswith("door"):
-                        # Fetch door state (if exists)
-                        door_state = self.door_states.get(sprite.name)
-                        if door_state is None:
-                            print(f"Error: Door {sprite.name} not found in door_states!") 
-                            continue  # Exit this interaction if door doesn't exist
-                        
-                        # print(f"Interacting with door named {sprite.name}, state: {door_state}")  # DEBUG
-
-                        if door_state['package_assigned']:
-                            if not door_state['delivered']:
-                                self.player.inventory["packages"] -= 1
-                                self.dialogue_box.activate("Package delivered!")
-                                door_state['delivered'] = True
-                            else:
-                                # If already delivered
-                                self.dialogue_box.activate("Package delivered!")
+                    # Check interaction with the door
+                    if door_state['package_assigned']:
+                        if not door_state['delivered']:  # If the package hasn't been delivered yet
+                            # Decrease the package count before activating the dialogue
+                            self.player.inventory["packages"] -= 1
+                            
+                            # Show "Package delivered!" message
+                            self.dialogue_box.activate("Package delivered!")
+                            self.dialogue_active = True  # Dialogue box is active
+                            
+                            # Mark the door to update after the dialogue box closes
+                            self.door_state_to_update = sprite.name  # Set the flag for delayed update
+                            
+                            # Set the delivered flag for this interaction
+                            self.package_delivered = True
+                            self.interaction_occurred = True  # Mark the interaction as occurred
                         else:
-                            # No package assigned
-                            self.dialogue_box.activate("Wrong house!")
+                            self.dialogue_box.activate("Package already delivered!")
+                            self.dialogue_active = True
+                    else:
+                        # No package assigned
+                        self.dialogue_box.activate("Wrong house!")
                         self.dialogue_active = True
+
+            # Once the dialogue box closes, update the door state and reset the interaction flag
+            if not self.dialogue_active and hasattr(self, 'door_state_to_update'):
+                door_name = self.door_state_to_update
+                door_state = self.door_states.get(door_name)
+                if door_state is not None:
+                    door_state['delivered'] = True  # Mark as delivered after dialogue box closes
+                    delattr(self, 'door_state_to_update')  # Reset the flag
+                    delattr(self, 'package_delivered')  # Reset the package delivered flag
+                    delattr(self, 'interaction_occurred')  # Reset the interaction flag
 
     def toggle_dialogue_box(self, text=""):
         self.dialogue_active = not self.dialogue_active
