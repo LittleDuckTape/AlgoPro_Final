@@ -14,5 +14,8 @@ F = Interact with door
 
 Esc = Exit out of dialogue / map
 
+## Video Demo:
+You can access the video demo [here](https://drive.google.com/file/d/1HzxMdxZIlKWGKnuUVjNrhsEt8_bYpGqJ/view?usp=drive_link).
+
 ## Contact Info:
 Irene Angelina: irene.angelina@binus.ac.id
